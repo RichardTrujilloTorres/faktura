@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\UploadFileToS3;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 
@@ -56,8 +57,10 @@ class InvoicesController extends Controller
 
         // TODO reposition procedure
         $filename = $this->getFilename($request->file);
-        $filePath = $request->file->storeAs('images', $filename);
-
+        $filePath = $request->file->storeAs(
+            config('faktura.storage.directory'),
+            $filename
+        );
 
         $invoice = Invoice::create([
             'filename' => $filename,
@@ -66,8 +69,7 @@ class InvoicesController extends Controller
             // 'number' =>  '', cloud count based generation procedure
         ]);
 
-        // TODO cloud upload job
-
+        UploadFileToS3::dispatch($invoice);
 
         return response()->json([
             'invoice' => $invoice,
